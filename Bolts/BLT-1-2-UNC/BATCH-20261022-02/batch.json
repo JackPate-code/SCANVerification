@@ -1,0 +1,19 @@
+{
+  "batch_id": "BATCH-20261022-02",
+  "timestamp": "2026-10-22T12:12:21",
+  "item_count": 8,
+  "pass_count": 7,
+  "rejected_count": 1,
+  "suspect_count": 1,
+  "material": "SAE Grade 5 steel",
+  "material_confidence": 0.956,
+  "dimensions": {
+    "length_mm": 75.935,
+    "diameter_mm": 12.7605,
+    "head_af_mm": 18.9381
+  },
+  "density_g_cm3": 7.894,
+  "vibration_peak_hz": 1521.1,
+  "status": "NON-CONFORM",
+  "sample_data": true
+}

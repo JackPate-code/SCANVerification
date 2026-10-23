@@ -1,0 +1,11 @@
+{
+  "description": "Bolt component, part number BLT-1-2-UNC",
+  "material": "SAE Grade 5 steel",
+  "density_g_cm3": 7.85,
+  "dimensions": {
+    "length_mm": 76.2,
+    "diameter_mm": 12.7,
+    "head_af_mm": 19.05
+  },
+  "tolerance_pct": 1.5
+}

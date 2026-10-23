@@ -1,0 +1,142 @@
+[
+  {
+    "component_id": "BATCH-20261022-02-COMP-001",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 75.725,
+      "diameter_mm": 12.703,
+      "head_af_mm": 19.088,
+      "density_g_cm3": 7.8306
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-002",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 76.487,
+      "diameter_mm": 12.733,
+      "head_af_mm": 18.971,
+      "density_g_cm3": 7.8146
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-003",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 73.184,
+      "diameter_mm": 13.221,
+      "head_af_mm": 17.984,
+      "density_g_cm3": 7.8924
+    },
+    "flags": [
+      "length_mm",
+      "diameter_mm",
+      "head_af_mm"
+    ],
+    "verdict": "NON-CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-004",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 75.879,
+      "diameter_mm": 12.758,
+      "head_af_mm": 19.106,
+      "density_g_cm3": 7.8458
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-005",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 76.677,
+      "diameter_mm": 12.628,
+      "head_af_mm": 18.945,
+      "density_g_cm3": 7.8458
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-006",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 76.267,
+      "diameter_mm": 12.665,
+      "head_af_mm": 19.123,
+      "density_g_cm3": 7.8432
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-007",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 76.648,
+      "diameter_mm": 12.686,
+      "head_af_mm": 19.166,
+      "density_g_cm3": 7.8436
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261022-02-COMP-008",
+    "expected": {
+      "length_mm": 76.2,
+      "diameter_mm": 12.7,
+      "head_af_mm": 19.05,
+      "density_g_cm3": 7.85
+    },
+    "actual": {
+      "length_mm": 76.613,
+      "diameter_mm": 12.69,
+      "head_af_mm": 19.122,
+      "density_g_cm3": 7.89
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "batch_id": "BATCH-20261021-01",
+  "timestamp": "2026-10-21T12:12:21",
+  "item_count": 8,
+  "pass_count": 7,
+  "rejected_count": 1,
+  "suspect_count": 1,
+  "material": "Silicon / epoxy",
+  "material_confidence": 0.952,
+  "dimensions": {
+    "length_mm": 10.0434,
+    "width_mm": 10.0765,
+    "height_mm": 1.4092
+  },
+  "density_g_cm3": 2.326,
+  "vibration_peak_hz": 1642.8,
+  "status": "NON-CONFORM",
+  "sample_data": true
+}

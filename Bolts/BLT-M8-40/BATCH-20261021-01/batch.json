@@ -1,0 +1,19 @@
+{
+  "batch_id": "BATCH-20261021-01",
+  "timestamp": "2026-10-21T15:12:21",
+  "item_count": 8,
+  "pass_count": 6,
+  "rejected_count": 2,
+  "suspect_count": 2,
+  "material": "Stainless steel 304",
+  "material_confidence": 0.967,
+  "dimensions": {
+    "length_mm": 40.1527,
+    "diameter_mm": 7.8971,
+    "head_af_mm": 12.8999
+  },
+  "density_g_cm3": 7.915,
+  "vibration_peak_hz": 1423.6,
+  "status": "NON-CONFORM",
+  "sample_data": true
+}

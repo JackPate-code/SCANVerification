@@ -1,0 +1,19 @@
+{
+  "batch_id": "BATCH-20261021-01",
+  "timestamp": "2026-10-21T15:12:21",
+  "item_count": 8,
+  "pass_count": 8,
+  "rejected_count": 0,
+  "suspect_count": 0,
+  "material": "Brass",
+  "material_confidence": 0.951,
+  "dimensions": {
+    "width_mm": 13.0053,
+    "height_mm": 6.4956,
+    "thread_diameter_mm": 8.0077
+  },
+  "density_g_cm3": 8.456,
+  "vibration_peak_hz": 1501.6,
+  "status": "CONFORM",
+  "sample_data": true
+}

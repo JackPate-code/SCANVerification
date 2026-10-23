@@ -1,0 +1,148 @@
+[
+  {
+    "component_id": "BATCH-20261021-01-COMP-001",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.027,
+      "height_mm": 10.044,
+      "thread_diameter_mm": 9.9589,
+      "density_g_cm3": 7.8026
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-002",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 16.985,
+      "height_mm": 10.054,
+      "thread_diameter_mm": 10.074,
+      "density_g_cm3": 7.7772
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-003",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.028,
+      "height_mm": 10.036,
+      "thread_diameter_mm": 10.067,
+      "density_g_cm3": 7.7658
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-004",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.041,
+      "height_mm": 9.9486,
+      "thread_diameter_mm": 9.9511,
+      "density_g_cm3": 7.7503
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-005",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.403,
+      "height_mm": 10.252,
+      "thread_diameter_mm": 9.6156,
+      "density_g_cm3": 8.2173
+    },
+    "flags": [
+      "width_mm",
+      "height_mm",
+      "thread_diameter_mm",
+      "density_g_cm3"
+    ],
+    "verdict": "NON-CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-006",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.662,
+      "height_mm": 10.579,
+      "thread_diameter_mm": 9.5507,
+      "density_g_cm3": 7.9831
+    },
+    "flags": [
+      "width_mm",
+      "height_mm",
+      "thread_diameter_mm",
+      "density_g_cm3"
+    ],
+    "verdict": "NON-CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-007",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.044,
+      "height_mm": 10.054,
+      "thread_diameter_mm": 10.013,
+      "density_g_cm3": 7.7439
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  },
+  {
+    "component_id": "BATCH-20261021-01-COMP-008",
+    "expected": {
+      "width_mm": 17.0,
+      "height_mm": 10.0,
+      "thread_diameter_mm": 10.0,
+      "density_g_cm3": 7.8
+    },
+    "actual": {
+      "width_mm": 17.082,
+      "height_mm": 10.011,
+      "thread_diameter_mm": 10.039,
+      "density_g_cm3": 7.762
+    },
+    "flags": [],
+    "verdict": "CONFORM"
+  }
+]

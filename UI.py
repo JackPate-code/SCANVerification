@@ -27,16 +27,18 @@ batch.json schema (all fields optional except batch_id):
       "dimensions": {"length_mm": 40.02, "diameter_mm": 7.98},  # machine vision
       "density_g_cm3": 7.91,                                    # vibration + vision
       "vibration_peak_hz": 1523.4,                              # vibration
-      "status": "PASS" | "REVIEW" | "FAIL"
+      "status": "CONFORM" | "NON-CONFORM"
     }
 
 The UI refreshes automatically when files change. Set INSPECTION_DATA or use
 File > Choose data folder... to point at a different root.
-File > Load demo data populates sample parts so you can see it working.
+File > Load inspection data creates sample batches so you can see it working.
 """
 
 from __future__ import annotations
 
+import csv
+import html
 import json
 import os
 import random
@@ -45,7 +47,8 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QLineSeries, QScatterSeries, QValueAxis
+from PySide6.QtCharts import (QBarCategoryAxis, QBarSeries, QBarSet, QChart, QChartView,
+                              QDateTimeAxis, QLineSeries, QScatterSeries, QValueAxis)
 from PySide6.QtCore import (QAbstractTableModel, QFileSystemWatcher, QMarginsF, QModelIndex, QSettings,
                             QSortFilterProxyModel, Qt, QTimer, QUrl)
 from PySide6.QtGui import (QAction, QColor, QDesktopServices, QFont, QKeySequence, QPageLayout, QPageSize,
@@ -58,7 +61,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QDoub
                                QTableWidgetItem, QTabWidget, QTextBrowser, QTreeWidget, QTreeWidgetItem,
                                QVBoxLayout, QWidget)
 
-STATUS_COLORS = {"PASS": "#2e9e55", "REVIEW": "#d9930d", "FAIL": "#d64545"}
+STATUS_COLORS = {"CONFORM": "#2e9e55", "NON-CONFORM": "#d64545"}
 
 
 # ==========================================================================
@@ -69,7 +72,8 @@ def slug(name: str) -> str:
 
 
 def list_dirs(path: Path) -> list[str]:
-    return sorted(p.name for p in path.iterdir() if p.is_dir()) if path.exists() else []
+    return sorted(p.name for p in path.iterdir()
+                  if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__") if path.exists() else []
 
 
 def read_json(path: Path) -> dict:
@@ -89,10 +93,18 @@ def load_batches(root: Path, ctype: str, part: str) -> list[dict]:
         except (KeyError, ValueError, TypeError):
             ts = None
         n, ok = meta.get("item_count"), meta.get("pass_count")
+        rejected = meta.get("suspect_count", meta.get("rejected_count"))
+        if rejected is None and n is not None and ok is not None:
+            rejected = max(0, int(n) - int(ok))
+        raw_status = str(meta.get("status", "")).upper()
+        # Present a binary disposition throughout the UI, including older batch records.
+        conforms = (int(rejected or 0) == 0) if rejected is not None else raw_status in {"PASS", "CONFORM", "CONFORMING"}
+        status = "CONFORM" if conforms else "NON-CONFORM"
         rows.append({
             "id": meta.get("batch_id", bid), "time": ts,
-            "status": str(meta.get("status", "")).upper(),
-            "items": n, "rate": round(100 * ok / n, 1) if n and ok is not None else None,
+            "status": status,
+            "items": n, "rejected": rejected,
+            "rate": round(100 * ok / n, 1) if n and ok is not None else None,
             "material": meta.get("material", ""), "conf": meta.get("material_confidence"),
             "density": meta.get("density_g_cm3"), "vib": meta.get("vibration_peak_hz"),
             "dims": meta.get("dimensions") or {},
@@ -104,9 +116,9 @@ def load_batches(root: Path, ctype: str, part: str) -> list[dict]:
 
 
 class BatchModel(QAbstractTableModel):
-    BASE = ["Batch ID", "Time", "Status", "Items", "Pass rate %", "Material", "Mat. conf.",
+    BASE = ["Batch ID", "Time", "Total items", "Items rejected", "Conform rate %", "Material", "Mat. conf.",
             "Density g/cm³", "Peak vib. Hz"]
-    TEXT_COLS = {0, 2, 5}
+    TEXT_COLS = {0, 5}
 
     def __init__(self):
         super().__init__()
@@ -128,7 +140,7 @@ class BatchModel(QAbstractTableModel):
 
     def value(self, row: dict, col: int):
         if col < len(self.BASE):
-            return [row["id"], row["time"], row["status"], row["items"], row["rate"], row["material"],
+            return [row["id"], row["time"], row["items"], row["rejected"], row["rate"], row["material"],
                     row["conf"], row["density"], row["vib"]][col]
         return row["dims"].get(self.dim_cols[col - len(self.BASE)])
 
@@ -160,12 +172,10 @@ class BatchModel(QAbstractTableModel):
             if v is None:
                 return "" if col in self.TEXT_COLS else -1e18
             return v
-        if role == Qt.ForegroundRole and col == 2 and v in STATUS_COLORS:
-            return QColor(STATUS_COLORS[v])
-        if role == Qt.FontRole and col == 2:
-            f = QFont()
-            f.setBold(True)
-            return f
+        if role == Qt.ForegroundRole and col == 3 and isinstance(v, (int, float)) and v > 0:
+            return QColor(STATUS_COLORS["NON-CONFORM"])
+        if role == Qt.FontRole and col == 3 and isinstance(v, (int, float)) and v > 0:
+            f = QFont(); f.setBold(True); return f
         if role == Qt.TextAlignmentRole and col not in self.TEXT_COLS and col != 1:
             return int(Qt.AlignRight | Qt.AlignVCenter)
 
@@ -186,64 +196,131 @@ class BatchFilter(QSortFilterProxyModel):
 
 
 # ==========================================================================
-# Demo data (only when you choose File > Load demo data)
+# Sample inspection catalog
 # ==========================================================================
-DEMO_CATALOG = {
+PART_CATALOG = {
     "Bolts": {
-        "BLT-M8-40": dict(material="Steel 304", density=7.93, dims={"length_mm": 40.0, "diameter_mm": 8.0}),
-        "BLT-M10-60": dict(material="Steel 316", density=8.00, dims={"length_mm": 60.0, "diameter_mm": 10.0}),
+        "BLT-M6-20": dict(material="Zinc-plated steel", density=7.85, dims={"length_mm": 20.0, "diameter_mm": 6.0, "head_af_mm": 10.0}),
+        "BLT-M8-40": dict(material="Stainless steel 304", density=7.93, dims={"length_mm": 40.0, "diameter_mm": 8.0, "head_af_mm": 13.0}),
+        "BLT-M10-60": dict(material="Stainless steel 316", density=8.00, dims={"length_mm": 60.0, "diameter_mm": 10.0, "head_af_mm": 16.0}),
+        "BLT-1-2-UNC": dict(material="SAE Grade 5 steel", density=7.85, dims={"length_mm": 76.2, "diameter_mm": 12.7, "head_af_mm": 19.05}),
     },
-    "Nuts": {"NUT-M8-HEX": dict(material="Brass", density=8.50, dims={"width_mm": 13.0, "height_mm": 6.5})},
-    "Chips": {"CHP-QFN-32": dict(material="Silicon/Epoxy", density=2.30, dims={"length_mm": 5.0, "width_mm": 5.0})},
+    "Nuts": {
+        "NUT-M6-HEX": dict(material="Zinc-plated steel", density=7.85, dims={"width_mm": 10.0, "height_mm": 5.0, "thread_diameter_mm": 6.0}),
+        "NUT-M8-HEX": dict(material="Brass", density=8.50, dims={"width_mm": 13.0, "height_mm": 6.5, "thread_diameter_mm": 8.0}),
+        "NUT-M10-NYLON": dict(material="Steel / nylon insert", density=7.80, dims={"width_mm": 17.0, "height_mm": 10.0, "thread_diameter_mm": 10.0}),
+    },
+    "Chips": {
+        "IC-QFN32-5X5": dict(material="Silicon / epoxy", density=2.30, dims={"length_mm": 5.0, "width_mm": 5.0, "height_mm": 0.9}),
+        "IC-SOIC8-4P9X3P9": dict(material="Silicon / epoxy", density=2.33, dims={"length_mm": 4.9, "width_mm": 3.9, "height_mm": 1.5}),
+        "IC-LQFP64-10X10": dict(material="Silicon / epoxy", density=2.32, dims={"length_mm": 10.0, "width_mm": 10.0, "height_mm": 1.4}),
+    },
 }
 
 
 def write_report_pdf(path: Path, ctype: str, part: str, meta: dict) -> None:
-    """Placeholder report. Your real pipeline writes its own report.pdf."""
     rows = [("Component type", ctype), ("Part number", part), ("Batch", meta["batch_id"]),
             ("Timestamp", meta["timestamp"]), ("Items scanned", meta["item_count"]),
-            ("Items passed", meta["pass_count"]), ("Material", meta["material"]),
-            ("Density (g/cm³)", meta["density_g_cm3"]), ("Peak vibration (Hz)", meta["vibration_peak_hz"]),
-            *meta["dimensions"].items(), ("Status", meta["status"])]
-    body = "".join(f"<tr><td><b>{k}</b></td><td>{v}</td></tr>" for k, v in rows)
-    html = (f"<h1>Batch Report: {meta['batch_id']}</h1>"
-            "<p>Demo report generated by the UI. Replace with your pipeline's output.</p>"
-            f"<table border='1' cellpadding='6' cellspacing='0' width='100%'>{body}</table>")
-    writer = QPdfWriter(str(path))
-    writer.setPageSize(QPageSize(QPageSize.PageSizeId.Letter))
+            ("Items conforming", meta["pass_count"]), ("Items rejected", meta.get("rejected_count", 0)),
+            ("Material", meta["material"]), ("Density (g/cm³)", meta["density_g_cm3"]),
+            ("Peak vibration (Hz)", meta.get("vibration_peak_hz", "—")),
+            *meta["dimensions"].items(), ("Batch result", "Conform" if str(meta.get("status", "")).upper() in {"PASS", "CONFORM"} else "Non-conform")]
+    body = "".join(f"<tr><td><b>{html.escape(str(k))}</b></td><td>{html.escape(str(v))}</td></tr>" for k, v in rows)
+    html_doc = (f"<h1>Batch summary: {html.escape(meta['batch_id'])}</h1>"
+                f"<table border='1' cellpadding='6' cellspacing='0' width='100%'>{body}</table>")
+    writer = QPdfWriter(str(path)); writer.setPageSize(QPageSize(QPageSize.PageSizeId.Letter))
     writer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout.Unit.Millimeter)
-    doc = QTextDocument()
-    doc.setHtml(html)
-    doc.print_(writer)
+    doc = QTextDocument(); doc.setHtml(html_doc); doc.print_(writer)
 
 
-def seed_demo(root: Path) -> None:
+def write_component_pdf(path: Path, ctype: str, part: str, batch_id: str, record: dict) -> None:
+    rows = []
+    for metric, expected in record.get("expected", {}).items():
+        actual = record.get("actual", {}).get(metric)
+        flags = record.get("flags", [])
+        metric_flagged = any(flag in record.get("expected", {}) for flag in flags)
+        flagged = metric in flags or (record.get("verdict") in {"REJECT", "NON-CONFORM"} and not metric_flagged)
+        color = "#ffe0e0" if flagged else "#e8f6eb"
+        verdict = "Non-conform" if flagged else "Conform"
+        rows.append(f"<tr style='background:{color}'><td>{html.escape(str(metric))}</td>"
+                    f"<td>{html.escape(str(expected))}</td><td>{html.escape(str(actual if actual is not None else '—'))}</td>"
+                    f"<td><b>{verdict}</b></td></tr>")
+    body = "".join(rows) or "<tr><td colspan='4'>No numeric measurements available</td></tr>"
+    flag_text = ", ".join(record.get("flags", [])) or "None"
+    doc_html = (f"<h1>Individual Component Inspection</h1><p><b>Component:</b> {html.escape(record['component_id'])}</p>"
+                f"<p><b>Type / part:</b> {html.escape(ctype)} / {html.escape(part)}<br>"
+                f"<b>Batch:</b> {html.escape(batch_id)}<br><b>Result:</b> {'Non-conform' if record.get('verdict') in {'REJECT', 'NON-CONFORM'} else 'Conform'}</p>"
+                "<table border='1' cellpadding='6' cellspacing='0' width='100%'><tr style='background:#263b50;color:white'>"
+                "<th>Metric</th><th>Expected value</th><th>Read value</th><th>Inspection</th></tr>" + body + "</table>"
+                f"<p><b>Non-conforming measurements:</b> {html.escape(flag_text if flag_text != 'None' else 'None')}</p>")
+    writer = QPdfWriter(str(path)); writer.setPageSize(QPageSize(QPageSize.PageSizeId.Letter))
+    writer.setPageMargins(QMarginsF(12, 12, 12, 12), QPageLayout.Unit.Millimeter)
+    doc = QTextDocument(); doc.setHtml(doc_html); doc.print_(writer)
+
+
+def make_component_record(component_id: str, spec: dict, rng: random.Random, anomaly: bool = False) -> dict:
+    expected = dict(spec.get("dimensions", {}) or {})
+    if spec.get("density_g_cm3") is not None:
+        expected["density_g_cm3"] = spec["density_g_cm3"]
+    actual, flags = {}, []
+    tol_pct = float(spec.get("tolerance_pct", 1.5) or 1.5)
+    for metric, nominal in expected.items():
+        try: nominal = float(nominal)
+        except (ValueError, TypeError):
+            actual[metric] = nominal
+            continue
+        deviation = rng.uniform(-tol_pct / 200, tol_pct / 200)
+        if anomaly and rng.random() < 0.75:
+            deviation = rng.choice([-1, 1]) * rng.uniform(tol_pct / 100 * 1.5, tol_pct / 100 * 4.0)
+        value = nominal * (1 + deviation)
+        actual[metric] = round(value, 4 if abs(value) < 10 else 3)
+        if abs(value - nominal) > abs(nominal) * tol_pct / 100:
+            flags.append(metric)
+    return {"component_id": component_id, "expected": expected, "actual": actual,
+            "flags": flags, "verdict": "NON-CONFORM" if flags else "CONFORM"}
+
+
+def write_component_records(batch_dir: Path, ctype: str, part: str, batch_id: str,
+                            records: list[dict], write_pdfs: bool = True) -> None:
+    cdir = batch_dir / "components"; cdir.mkdir(parents=True, exist_ok=True)
+    (cdir / "components.json").write_text(json.dumps(records, indent=2))
+    if write_pdfs:
+        for record in records:
+            write_component_pdf(cdir / f"{slug(record['component_id'])}.pdf", ctype, part, batch_id, record)
+
+
+def seed_inspection_data(root: Path) -> None:
+    """Create realistic sample batches for bolts, nuts, and IC packages."""
     rng, now = random.Random(42), datetime.now()
-    for ctype, parts in DEMO_CATALOG.items():
-        for part, spec in parts.items():
+    for ctype, parts in PART_CATALOG.items():
+        for part, base in parts.items():
             pdir = root / ctype / part
             pdir.mkdir(parents=True, exist_ok=True)
-            (pdir / "part.json").write_text(json.dumps({
-                "description": f"{ctype[:-1]} {part}", "material": spec["material"],
-                "density_g_cm3": spec["density"], "dimensions": spec["dims"], "tolerance_pct": 1.5}, indent=2))
-            for i in range(10):
-                ts = now - timedelta(days=9 - i, hours=rng.randint(0, 5))
-                bid = f"BATCH-{ts:%Y%m%d}-{i + 1:04d}"
-                n = rng.choice([200, 250, 300])
-                ok = n - rng.randint(0, 11)
-                meta = {
-                    "batch_id": bid, "timestamp": ts.isoformat(timespec="seconds"), "item_count": n,
-                    "pass_count": ok, "material": spec["material"],
-                    "material_confidence": round(rng.uniform(0.93, 0.995), 3),
-                    "dimensions": {k: round(v * rng.uniform(0.992, 1.008), 3) for k, v in spec["dims"].items()},
-                    "density_g_cm3": round(spec["density"] * rng.uniform(0.985, 1.015), 3),
-                    "vibration_peak_hz": round(rng.uniform(1400, 1650), 1),
-                    "status": "PASS" if ok / n > 0.985 else ("REVIEW" if ok / n > 0.96 else "FAIL"),
-                }
-                bdir = pdir / bid
-                bdir.mkdir(exist_ok=True)
+            spec = {"description": f"{ctype[:-1].lower().capitalize()} component, part number {part}", "material": base["material"],
+                    "density_g_cm3": base["density"], "dimensions": base["dims"], "tolerance_pct": 1.5}
+            (pdir / "part.json").write_text(json.dumps(spec, indent=2))
+            for batch_idx in range(2):
+                ts = now - timedelta(days=1 - batch_idx, hours=rng.randint(0, 5))
+                bid = f"BATCH-{ts:%Y%m%d}-{batch_idx + 1:02d}"
+                bdir = pdir / bid; bdir.mkdir(parents=True, exist_ok=True)
+                records = []
+                for i in range(1, 9):
+                    anomaly = rng.random() < 0.13
+                    records.append(make_component_record(f"{bid}-COMP-{i:03d}", spec, rng, anomaly))
+                rejected = sum(r["verdict"] in {"REJECT", "NON-CONFORM"} for r in records)
+                # Stable aggregate measurements support the summary table and cross-part charts.
+                dims = {k: round(sum(float(r["actual"].get(k, v)) for r in records) / len(records), 4)
+                        for k, v in base["dims"].items()}
+                meta = {"batch_id": bid, "timestamp": ts.isoformat(timespec="seconds"), "item_count": len(records),
+                        "pass_count": len(records) - rejected, "rejected_count": rejected, "suspect_count": rejected,
+                        "material": base["material"], "material_confidence": round(rng.uniform(.94, .998), 3),
+                        "dimensions": dims, "density_g_cm3": round(base["density"] * rng.uniform(.99, 1.01), 3),
+                        "vibration_peak_hz": round(rng.uniform(1400, 1650), 1),
+                        "status": "NON-CONFORM" if rejected else "CONFORM",
+                        "sample_data": True}
                 (bdir / "batch.json").write_text(json.dumps(meta, indent=2))
                 write_report_pdf(bdir / "report.pdf", ctype, part, meta)
+                write_component_records(bdir, ctype, part, bid, records)
 
 
 # ==========================================================================
@@ -277,7 +354,7 @@ class MainWindow(QMainWindow):
         self.resize(1450, 900)
         self.settings = QSettings("InspectionUI", "InspectionUI")
         self.root = Path(os.environ.get("INSPECTION_DATA") or
-                         self.settings.value("root", "inspection_data")).resolve()
+                         self.settings.value("root", str(Path(__file__).resolve().parent))).resolve()
         self.ctype: str | None = None
         self.part: str | None = None
         self.current: dict | None = None
@@ -299,7 +376,8 @@ class MainWindow(QMainWindow):
     def _build_menu(self):
         m = self.menuBar().addMenu("&File")
         for text, slot, key in [("Choose data folder…", self.choose_root, None),
-                                ("Load demo data", self.load_demo, None),
+                                ("Load inspection data (bolts, nuts, IC packages)", self.load_inspection_data, None),
+                                ("Generate sample inspection + PDF…", self.generate_sample_batch, None),
                                 ("Refresh", self.refresh_all, QKeySequence("F5")),
                                 (None, None, None), ("Quit", self.close, QKeySequence.Quit)]:
             if text is None:
@@ -348,15 +426,15 @@ class MainWindow(QMainWindow):
         rl.addWidget(self.subtitle)
 
         cards = QHBoxLayout()
-        self.m_batches, self.m_items = MetricCard("Batches"), MetricCard("Items scanned")
-        self.m_rate, self.m_last = MetricCard("Avg pass rate"), MetricCard("Latest batch")
+        self.m_batches, self.m_items = MetricCard("Batches"), MetricCard("Total items")
+        self.m_rate, self.m_last = MetricCard("Items rejected"), MetricCard("Latest batch")
         for c in (self.m_batches, self.m_items, self.m_rate, self.m_last):
             cards.addWidget(c)
         rl.addLayout(cards)
 
         filt = QHBoxLayout()
         self.status_box = QComboBox()
-        self.status_box.addItems(["All", "PASS", "REVIEW", "FAIL"])
+        self.status_box.addItems(["All", "Conform", "Non-conform"])
         self.search = QLineEdit()
         self.search.setPlaceholderText("Search batch ID…")
         self.search.setClearButtonEnabled(True)
@@ -380,8 +458,9 @@ class MainWindow(QMainWindow):
         self.table.selectionModel().currentRowChanged.connect(self.on_batch_changed)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._build_report_tab(), "Report")
-        self.tabs.addTab(self._build_details_tab(), "Measurements")
+        self.tabs.addTab(self._build_report_tab(), "Component document")
+        self.tabs.addTab(self._build_components_tab(), "Inspected items")
+        self.tabs.addTab(self._build_details_tab(), "Batch measurements")
         self.tabs.addTab(self._build_trends_tab(), "Trends")
         self.tabs.addTab(self._build_spec_tab(), "Part spec")
 
@@ -415,13 +494,35 @@ class MainWindow(QMainWindow):
         self.pdf_view.setDocument(self.pdf_doc)
         self.pdf_view.setPageMode(QPdfView.PageMode.MultiPage)
         self.pdf_view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
-        self.pdf_msg = QLabel("Select a batch to view its report.")
+        self.pdf_msg = QLabel("Select an inspected item to view its component PDF.")
         self.pdf_msg.setAlignment(Qt.AlignCenter)
         self.pdf_msg.setStyleSheet("color: gray;")
         self.pdf_stack = QStackedWidget()
         self.pdf_stack.addWidget(self.pdf_msg)
         self.pdf_stack.addWidget(self.pdf_view)
         lay.addWidget(self.pdf_stack, 1)
+        return w
+
+    def _build_components_tab(self) -> QWidget:
+        w = QWidget(); lay = QVBoxLayout(w)
+        lay.addWidget(QLabel("Select any component row to preview its report. Use View selected component document to open the full PDF. Red cells indicate non-conforming measurements."))
+        self.components_table = QTableWidget(0, 5)
+        self.components_table.setHorizontalHeaderLabels(["Component ID", "Metric", "Expected value", "Read value", "Result"])
+        self.components_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.components_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.components_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.components_table.setAlternatingRowColors(True)
+        self.components_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.components_table.horizontalHeader().setStretchLastSection(True)
+        self.components_table.itemSelectionChanged.connect(self.on_component_selected)
+        self.components_table.cellDoubleClicked.connect(lambda _r, _c: self.view_selected_component_document())
+        lay.addWidget(self.components_table, 1)
+        actions = QHBoxLayout()
+        self.btn_component_document = QPushButton("View selected component document")
+        self.btn_component_document.clicked.connect(self.view_selected_component_document)
+        actions.addWidget(self.btn_component_document)
+        actions.addStretch(1)
+        lay.addLayout(actions)
         return w
 
     def _build_details_tab(self) -> QWidget:
@@ -502,7 +603,6 @@ class MainWindow(QMainWindow):
                 pi.setData(0, Qt.UserRole, (t, p))
                 ti.addChild(pi)
                 watch.append(str(self.root / t / p))
-                watch.append(str(self.root / t / p))
                 if (t, p) == keep:
                     target = pi
             ti.setExpanded(True)
@@ -524,7 +624,7 @@ class MainWindow(QMainWindow):
             self.ctype = self.part = None
             self.model.set_rows([])
             self.title.setText("Select a part number")
-            self.subtitle.setText("Create a component type with “+ Type”, or use File > Load demo data.")
+            self.subtitle.setText("Create a component type with “+ Type”, or use File > Load inspection data.")
             self.update_metrics([])
             self.show_batch(None)
             return
@@ -564,10 +664,60 @@ class MainWindow(QMainWindow):
             self.ctype = self.part = None
             self.refresh_all()
 
-    def load_demo(self):
-        seed_demo(self.root)
+    def load_inspection_data(self):
+        seed_inspection_data(self.root)
         self.refresh_all()
-        self.statusBar().showMessage("Demo data loaded", 4000)
+        self.statusBar().showMessage("Inspection data loaded for bolts, nuts, and IC packages", 6000)
+
+    def generate_sample_batch(self):
+        """Generate a model-backed bolt batch; model-backed scans currently support the datasheet bolt only."""
+        try:
+            import pdf as pipeline
+            result = pipeline.simulate_and_write(self.root, n=40, contamination=0.04)
+            # Create an individual report for every inspected component from the real per-item CSV.
+            pdir = Path(result["dir"])
+            records = self.records_from_csv(pdir, result["ctype"], result["part"], result["batch_id"])
+            write_component_records(pdir, result["ctype"], result["part"], result["batch_id"], records)
+            self.refresh_all()
+            self.statusBar().showMessage(f"Generated {len(records)} component PDFs in {pdir}", 8000)
+        except Exception as exc:
+            QMessageBox.critical(self, "Sample generation failed", str(exc))
+
+    def records_from_csv(self, batch_dir: Path, ctype: str, part: str, batch_id: str) -> list[dict]:
+        spec = read_json(batch_dir.parent / "part.json")
+        records = []
+        csv_path = batch_dir / "parts.csv"
+        if not csv_path.exists():
+            return records
+        expected = dict(spec.get("dimensions", {}) or {})
+        # Map model CSV fields to UI spec keys; actual CSV values are in inches for fastener dimensions.
+        aliases = {"length_mm": ("length_in", 25.4), "head_af_mm": ("head_width_in", 25.4),
+                   "head_h_mm": ("head_height_in", 25.4), "shank_mm": ("shank_in", 25.4),
+                   "thread_mm": ("thread_in", 25.4), "tpi": ("tpi", 1.0)}
+        tol = float(spec.get("tolerance_pct", 1.5) or 1.5)
+        with csv_path.open(newline="", encoding="utf-8") as f:
+            for i, row in enumerate(csv.DictReader(f), 1):
+                actual, flags = {}, []
+                for metric, nominal in expected.items():
+                    alias = aliases.get(metric)
+                    if alias and row.get(alias[0]):
+                        try: value = float(row[alias[0]]) * alias[1]
+                        except ValueError: value = None
+                    elif metric == "diameter_mm" and row.get("shank_in"):
+                        value = float(row["shank_in"]) * 25.4
+                    else:
+                        value = None
+                    if value is not None:
+                        value = round(value, 4)
+                        actual[metric] = value
+                        if nominal and abs(value - float(nominal)) > abs(float(nominal)) * tol / 100:
+                            flags.append(metric)
+                if row.get("verdict", "").upper() in {"SUSPECT", "NON-CONFORM", "REJECT"} and not flags:
+                    flags.append("Model verification")
+                records.append({"component_id": f"{batch_id}-ITEM-{i:04d}", "expected": expected,
+                                "actual": actual, "flags": flags,
+                                "verdict": "NON-CONFORM" if flags or row.get("verdict", "").upper() in {"SUSPECT", "NON-CONFORM", "REJECT"} else "CONFORM"})
+        return records
 
     # ---- part / batch loading ---------------------------------------------
     def load_part(self, ctype: str, part: str):
@@ -591,13 +741,15 @@ class MainWindow(QMainWindow):
     def update_metrics(self, rows):
         self.m_batches.set(str(len(rows)))
         self.m_items.set(f"{sum(r['items'] or 0 for r in rows):,}")
-        rates = [r["rate"] for r in rows if r["rate"] is not None]
-        self.m_rate.set(f"{sum(rates) / len(rates):.1f}%" if rates else "—")
+        rejected = sum(int(r["rejected"] or 0) for r in rows)
+        self.m_rate.set(f"{rejected:,}")
         times = [r["time"] for r in rows if r["time"]]
         self.m_last.set(max(times).strftime("%b %d, %H:%M") if times else "—")
 
     def apply_filters(self):
-        self.proxy.set_filters(self.status_box.currentText(), self.search.text())
+        selected = self.status_box.currentText()
+        status = {"Conform": "CONFORM", "Non-conform": "NON-CONFORM"}.get(selected, "All")
+        self.proxy.set_filters(status, self.search.text())
 
     def on_batch_changed(self, current, _prev):
         if not current.isValid():
@@ -607,18 +759,101 @@ class MainWindow(QMainWindow):
 
     def show_batch(self, batch: dict | None):
         self.current = batch
-        has_pdf = bool(batch and batch["pdf"])
+        self.current_component_pdf = None
+        records = self.load_component_records(batch) if batch else []
+        self.populate_components(records)
+        self.show_details(batch)
+        if records:
+            self.components_table.selectRow(0)
+            self.load_component_pdf(records[0])
+        else:
+            self.set_pdf_path(batch["pdf"] if batch else None, batch)
+
+    def load_component_records(self, batch: dict) -> list[dict]:
+        cdir = batch["dir"] / "components"
+        data_file = cdir / "components.json"
+        if data_file.exists():
+            try:
+                return json.loads(data_file.read_text())
+            except (OSError, json.JSONDecodeError):
+                pass
+        records = self.records_from_csv(batch["dir"], self.ctype or "", self.part or "", batch["id"])
+        if not records:
+            # Legacy aggregate-only batches cannot recover true per-item reads; label these as generated estimates.
+            spec = read_json(self.root / (self.ctype or "") / (self.part or "") / "part.json")
+            n = min(int(batch.get("items") or 0), 250)
+            rng = random.Random(batch["id"])
+            records = [make_component_record(f"{batch['id']}-ITEM-{i:04d}", spec, rng, False)
+                       for i in range(1, n + 1)]
+            for record in records:
+                record["data_note"] = "Estimated from part specification; legacy batch had no per-item readings"
+        if records:
+            write_component_records(batch["dir"], self.ctype or "Component", self.part or "Unknown", batch["id"], records)
+        return records
+
+    def populate_components(self, records: list[dict]):
+        self.components_table.blockSignals(True)
+        self.components_table.setRowCount(0)
+        for record in records:
+            metrics = list(record.get("expected", {})) or ["Overall verdict"]
+            for metric in metrics:
+                r = self.components_table.rowCount()
+                self.components_table.insertRow(r)
+                actual = record.get("actual", {}).get(metric, "—")
+                expected = record.get("expected", {}).get(metric, "—")
+                flags = record.get("flags", [])
+                metric_flagged = any(flag in record.get("expected", {}) for flag in flags)
+                flagged = metric in flags or (record.get("verdict") in {"REJECT", "NON-CONFORM"} and not metric_flagged)
+                result = "Non-conform" if flagged else "Conform"
+                vals = [record.get("component_id", ""), metric, str(expected), str(actual), result]
+                for c, value in enumerate(vals):
+                    item = QTableWidgetItem(value)
+                    item.setData(Qt.UserRole, record)
+                    if flagged:
+                        item.setBackground(QColor("#ffdede"))
+                        item.setForeground(QColor("#8d1111"))
+                    self.components_table.setItem(r, c, item)
+        self.components_table.blockSignals(False)
+
+    def on_component_selected(self):
+        items = self.components_table.selectedItems()
+        if items:
+            record = items[0].data(Qt.UserRole)
+            if record:
+                self.load_component_pdf(record)
+
+    def load_component_pdf(self, record: dict):
+        if not self.current:
+            return
+        path = self.current["dir"] / "components" / f"{slug(record['component_id'])}.pdf"
+        if not path.exists():
+            write_component_pdf(path, self.ctype or "Component", self.part or "Unknown", self.current["id"], record)
+        self.set_pdf_path(path, self.current)
+
+    def view_selected_component_document(self):
+        """Open the selected component's individual PDF in the built-in document tab."""
+        items = self.components_table.selectedItems()
+        if not items:
+            QMessageBox.information(self, "Select a component", "Select a component row first.")
+            return
+        record = items[0].data(Qt.UserRole)
+        if not record:
+            return
+        self.load_component_pdf(record)
+        self.tabs.setCurrentIndex(0)
+
+    def set_pdf_path(self, path: Path | None, batch: dict | None):
+        self.current_component_pdf = path
+        has_pdf = bool(path and Path(path).exists())
         self.btn_open.setEnabled(has_pdf)
         self.btn_save.setEnabled(has_pdf)
         if has_pdf:
-            self.pdf_doc.load(str(batch["pdf"]))
+            self.pdf_doc.load(str(path))
             self.pdf_stack.setCurrentWidget(self.pdf_view)
         else:
             self.pdf_doc.close()
-            self.pdf_msg.setText("No report.pdf found for this batch." if batch
-                                 else "Select a batch to view its report.")
+            self.pdf_msg.setText("No component PDF available." if batch else "Select a batch and inspected item.")
             self.pdf_stack.setCurrentWidget(self.pdf_msg)
-        self.show_details(batch)
 
     def show_details(self, b: dict | None):
         if not b:
@@ -628,9 +863,9 @@ class MainWindow(QMainWindow):
         dims = "".join(f"<tr><td>{k}</td><td><b>{v}</b></td></tr>" for k, v in b["dims"].items())
         conf = f"{b['conf']:.1%}" if isinstance(b["conf"], (int, float)) else "—"
         self.details.setHtml(f"""
-            <h2>{b['id']} <span style='color:{col}'>{b['status'] or ''}</span></h2>
+            <h2>{b['id']} <span style='color:{col}'>{'Conform' if b['status'] == 'CONFORM' else 'Non-conform'}</span></h2>
             <p>{b['time'].strftime('%Y-%m-%d %H:%M:%S') if b['time'] else ''} &nbsp;|&nbsp;
-               {b['items'] or '—'} items, {b['rate'] if b['rate'] is not None else '—'}% passed</p>
+               {b['items'] or '—'} total items, {b['rejected'] or 0} rejected, {b['rate'] if b['rate'] is not None else '—'}% conforming</p>
             <table cellpadding='4'>
               <tr><td colspan='2'><u>Hyperspectral</u></td></tr>
               <tr><td>Material</td><td><b>{b['material'] or '—'}</b> (confidence {conf})</td></tr>
@@ -641,58 +876,70 @@ class MainWindow(QMainWindow):
             </table>""")
 
     def open_external(self):
-        if self.current and self.current["pdf"]:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.current["pdf"])))
+        if getattr(self, "current_component_pdf", None) and Path(self.current_component_pdf).exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.current_component_pdf)))
 
     def save_copy(self):
-        if not (self.current and self.current["pdf"]):
+        source = getattr(self, "current_component_pdf", None)
+        if not (source and Path(source).exists()):
             return
-        dest, _ = QFileDialog.getSaveFileName(self, "Save report", f"{self.current['id']}.pdf", "PDF (*.pdf)")
+        dest, _ = QFileDialog.getSaveFileName(self, "Save component PDF", f"{Path(source).stem}.pdf", "PDF (*.pdf)")
         if dest:
-            Path(dest).write_bytes(Path(self.current["pdf"]).read_bytes())
+            Path(dest).write_bytes(Path(source).read_bytes())
             self.statusBar().showMessage(f"Saved {dest}", 4000)
 
-    # ---- trends ------------------------------------------------------------
+    # ---- cross-part comparison charts --------------------------------------
     def populate_metric_box(self):
-        cols = self.model.columns()
-        self.metric_box.blockSignals(True)
-        self.metric_box.clear()
-        for i, name in enumerate(cols):
-            if i not in (0, 1, 2, 5):
-                self.metric_box.addItem(name, i)
-        self.metric_box.setCurrentIndex(max(0, self.metric_box.findText("Pass rate %")))
+        metrics = self.collect_comparison_metrics()
+        current = self.metric_box.currentText()
+        self.metric_box.blockSignals(True); self.metric_box.clear()
+        for name in metrics:
+            self.metric_box.addItem(name)
+        if current and self.metric_box.findText(current) >= 0:
+            self.metric_box.setCurrentText(current)
         self.metric_box.blockSignals(False)
         self.update_chart()
 
+    def collect_comparison_metrics(self) -> dict[str, list[tuple[str, float]]]:
+        result: dict[str, list[tuple[str, float]]] = {}
+        for ctype in list_dirs(self.root):
+            for part in list_dirs(self.root / ctype):
+                rows = load_batches(self.root, ctype, part)
+                if not rows: continue
+                # Compare each part number using its latest batch, rather than plotting batch history.
+                row = max(rows, key=lambda x: x["time"] or datetime.min)
+                label = f"{part} ({ctype})"
+                for key, value in (row.get("dims") or {}).items():
+                    if isinstance(value, (int, float)):
+                        result.setdefault(key, []).append((label, float(value)))
+                for key, value in (("Density (g/cm³)", row.get("density")),
+                                   ("Peak vibration (Hz)", row.get("vib")),
+                                   ("Total items", row.get("items")),
+                                   ("Items rejected", row.get("rejected")),
+                                   ("Conform rate (%)", row.get("rate"))):
+                    if isinstance(value, (int, float)):
+                        result.setdefault(key, []).append((label, float(value)))
+        return {k: sorted(v, key=lambda p: p[0]) for k, v in result.items() if v}
+
     def update_chart(self):
-        chart = QChart()
-        chart.legend().hide()
-        col = self.metric_box.currentData()
-        pts = []
-        if col is not None:
-            pts = sorted(((r["time"], self.model.value(r, col)) for r in self.model.rows
-                          if r["time"] and self.model.value(r, col) is not None), key=lambda p: p[0])
-        if pts:
-            line, dots = QLineSeries(), QScatterSeries()
-            dots.setMarkerSize(8)
-            for t, v in pts:
-                ms = t.timestamp() * 1000
-                line.append(ms, float(v))
-                dots.append(ms, float(v))
-            chart.addSeries(line)
-            chart.addSeries(dots)
-            ax = QDateTimeAxis()
-            ax.setFormat("MMM d")
+        chart = QChart(); chart.legend().hide()
+        metric = self.metric_box.currentText()
+        points = self.collect_comparison_metrics().get(metric, [])
+        if points:
+            barset = QBarSet(metric)
+            categories = []
+            for label, value in points:
+                categories.append(label)
+                barset.append(value)
+            series = QBarSeries(); series.append(barset); chart.addSeries(series)
+            ax = QBarCategoryAxis(); ax.append(categories); ax.setLabelsAngle(-35)
             ay = QValueAxis()
-            lo, hi = min(float(v) for _, v in pts), max(float(v) for _, v in pts)
-            pad = (hi - lo) * 0.15 or abs(hi) * 0.01 or 1
-            ay.setRange(lo - pad, hi + pad)
-            chart.addAxis(ax, Qt.AlignBottom)
-            chart.addAxis(ay, Qt.AlignLeft)
-            for s in (line, dots):
-                s.attachAxis(ax)
-                s.attachAxis(ay)
-        chart.setTitle(self.metric_box.currentText() + " per batch")
+            vals = [v for _, v in points]; lo, hi = min(vals), max(vals)
+            pad = (hi - lo) * 0.15 or abs(hi) * 0.03 or 1
+            ay.setRange(min(0, lo - pad), hi + pad)
+            chart.addAxis(ax, Qt.AlignBottom); chart.addAxis(ay, Qt.AlignLeft)
+            series.attachAxis(ax); series.attachAxis(ay)
+        chart.setTitle(f"{metric} compared across part numbers (latest batch)")
         self.chart_view.setChart(chart)
 
     # ---- part spec ---------------------------------------------------------
@@ -724,6 +971,7 @@ class MainWindow(QMainWindow):
             "density_g_cm3": self.sp_density.value(), "dimensions": dims,
             "tolerance_pct": self.sp_tol.value()}, indent=2))
         self.subtitle.setText(self.sp_desc.text())
+        self.populate_metric_box()
         self.statusBar().showMessage("Spec saved", 4000)
 
 

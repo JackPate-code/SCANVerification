@@ -1,0 +1,11 @@
+{
+  "description": "Nut component, part number NUT-M8-HEX",
+  "material": "Brass",
+  "density_g_cm3": 8.5,
+  "dimensions": {
+    "width_mm": 13.0,
+    "height_mm": 6.5,
+    "thread_diameter_mm": 8.0
+  },
+  "tolerance_pct": 1.5
+}

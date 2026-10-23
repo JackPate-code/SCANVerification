@@ -1,0 +1,11 @@
+{
+  "description": "Bolt component, part number BLT-M6-20",
+  "material": "Zinc-plated steel",
+  "density_g_cm3": 7.85,
+  "dimensions": {
+    "length_mm": 20.0,
+    "diameter_mm": 6.0,
+    "head_af_mm": 10.0
+  },
+  "tolerance_pct": 1.5
+}
