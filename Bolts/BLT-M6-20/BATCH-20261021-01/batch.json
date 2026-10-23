@@ -1,0 +1,19 @@
+{
+  "batch_id": "BATCH-20261021-01",
+  "timestamp": "2026-10-21T15:45:49",
+  "item_count": 8,
+  "pass_count": 6,
+  "rejected_count": 2,
+  "suspect_count": 2,
+  "material": "Zinc-plated steel",
+  "material_confidence": 0.962,
+  "dimensions": {
+    "Length (mm)": 19.9366,
+    "Diameter (mm)": 5.9531,
+    "Head AF (mm)": 9.9585
+  },
+  "Density (g/cm3)": 7.927,
+  "vibration_peak_hz": 1560.0,
+  "status": "NON-CONFORM",
+  "sample_data": true
+}

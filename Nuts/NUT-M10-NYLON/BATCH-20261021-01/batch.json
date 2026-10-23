@@ -1,0 +1,19 @@
+{
+  "batch_id": "BATCH-20261021-01",
+  "timestamp": "2026-10-21T16:45:49",
+  "item_count": 8,
+  "pass_count": 6,
+  "rejected_count": 2,
+  "suspect_count": 2,
+  "material": "Steel / nylon insert",
+  "material_confidence": 0.97,
+  "dimensions": {
+    "width_mm": 17.159,
+    "height_mm": 10.1223,
+    "thread_Diameter (mm)": 9.9087
+  },
+  "Density (g/cm3)": 7.791,
+  "vibration_peak_hz": 1469.5,
+  "status": "NON-CONFORM",
+  "sample_data": true
+}

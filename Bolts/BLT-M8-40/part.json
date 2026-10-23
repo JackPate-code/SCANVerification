@@ -1,0 +1,11 @@
+{
+  "description": "Bolt component, part number BLT-M8-40",
+  "material": "Stainless steel 304",
+  "Density (g/cm3)": 7.93,
+  "dimensions": {
+    "Length (mm)": 40.0,
+    "Diameter (mm)": 8.0,
+    "Head AF (mm)": 13.0
+  },
+  "tolerance_pct": 1.5
+}

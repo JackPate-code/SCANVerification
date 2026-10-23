@@ -1,0 +1,11 @@
+{
+  "description": "Nut component, part number NUT-M6-HEX",
+  "material": "Zinc-plated steel",
+  "Density (g/cm3)": 7.85,
+  "dimensions": {
+    "width_mm": 10.0,
+    "height_mm": 5.0,
+    "thread_Diameter (mm)": 6.0
+  },
+  "tolerance_pct": 1.5
+}

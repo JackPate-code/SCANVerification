@@ -1,0 +1,11 @@
+{
+  "description": "Chip component, part number IC-SOIC8-4P9X3P9",
+  "material": "Silicon / epoxy",
+  "Density (g/cm3)": 2.33,
+  "dimensions": {
+    "Length (mm)": 4.9,
+    "width_mm": 3.9,
+    "height_mm": 1.5
+  },
+  "tolerance_pct": 1.5
+}

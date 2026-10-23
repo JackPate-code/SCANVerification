@@ -1,0 +1,10 @@
+PySide6
+PySide6-Addons
+numpy
+scipy
+scikit-learn
+joblib
+matplotlib
+reportlab
+pypdf
+pillow
