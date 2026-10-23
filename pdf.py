@@ -110,7 +110,7 @@ DATASHEET = {
         "straight_max_mm": 0.20,
         "marks": 3,
         # UI part.json (millimetres, same keys the batch.json 'dimensions' use)
-        "ui_dims_mm": {"length_mm": 76.2, "head_af_mm": 19.05, "head_h_mm": 7.95,
+        "ui_dims_mm": {"Length (mm)": 76.2, "Head AF (mm)": 19.05, "head_h_mm": 7.95,
                        "shank_mm": 12.7, "thread_mm": 31.75},
         "material": "Zinc-plated steel (SAE Grade 5)", "density": 7.85,
     }
@@ -322,7 +322,7 @@ def install_part(root: Path, part_number: str = "91247A724", datasheet_pdf: Path
     spec_path = pdir / "part.json"
     spec = json.loads(spec_path.read_text()) if spec_path.exists() else {}
     spec.update({"description": f"{ds['title']} - {ds['subtitle']}", "material": ds["material"],
-                 "density_g_cm3": ds["density"], "dimensions": ds["ui_dims_mm"],
+                 "Density (g/cm3)": ds["density"], "dimensions": ds["ui_dims_mm"],
                  "tolerance_pct": spec.get("tolerance_pct", 1.5), "part_number": part_number,
                  "datasheet": {"source": ds["source"], "rows": ds["rows"]}})
     spec_path.write_text(json.dumps(spec, indent=2))
@@ -671,7 +671,7 @@ def build_pdf(a: BatchAnalysis, out_path: Path, photo: Path | None = None, drawi
 def batch_json(a: BatchAnalysis, ds: dict) -> dict:
     n, k = a.n, a.n_suspect
     dims = {key: round(float(np.mean(col(a, f))), 3) for key, f in
-            (("length_mm", "len_mm"), ("head_af_mm", "af_mm"), ("head_h_mm", "head_h_mm"),
+            (("Length (mm)", "len_mm"), ("Head AF (mm)", "af_mm"), ("head_h_mm", "head_h_mm"),
              ("shank_mm", "shank_mm"), ("thread_mm", "thread_mm"))}
     spec_ok = float(np.mean([("hyperspectral" not in r) for r in a.reasons]))
     mod = {m: int(sum(m in r for r in a.reasons)) for m in ("vision", "vibration", "hyperspectral", "cross-sensor", "learned pattern")}

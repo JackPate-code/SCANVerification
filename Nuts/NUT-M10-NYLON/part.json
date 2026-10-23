@@ -1,11 +1,11 @@
 {
   "description": "Nut component, part number NUT-M10-NYLON",
   "material": "Steel / nylon insert",
-  "density_g_cm3": 7.8,
+  "Density (g/cm3)": 7.8,
   "dimensions": {
     "width_mm": 17.0,
     "height_mm": 10.0,
-    "thread_diameter_mm": 10.0
+    "thread_Diameter (mm)": 10.0
   },
   "tolerance_pct": 1.5
 }

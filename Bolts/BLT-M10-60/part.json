@@ -1,11 +1,11 @@
 {
   "description": "Bolt component, part number BLT-M10-60",
   "material": "Stainless steel 316",
-  "density_g_cm3": 8.0,
+  "Density (g/cm3)": 8.0,
   "dimensions": {
-    "length_mm": 60.0,
-    "diameter_mm": 10.0,
-    "head_af_mm": 16.0
+    "Length (mm)": 60.0,
+    "Diameter (mm)": 10.0,
+    "Head AF (mm)": 16.0
   },
   "tolerance_pct": 1.5
 }

@@ -1,0 +1,11 @@
+{
+  "description": "Bolt component, part number BLT-1-2-90",
+  "material": "SAE Grade 5 steel",
+  "Density (g/cm3)": 7.85,
+  "dimensions": {
+    "Length (mm)": 76.2,
+    "Diameter (mm)": 12.7,
+    "Head AF (mm)": 19.05
+  },
+  "tolerance_pct": 1.5
+}

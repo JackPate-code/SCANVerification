@@ -228,8 +228,8 @@ def render(p: Part, rng, cfg: SimConfig):
     sd = 0.0035 * nm
     mark_read = p.marks if rng.random() > 0.015 else max(0, p.marks + int(rng.choice([-1, 1])))
     vision = {
-        "length_mm": (p.L + rng.normal(0, sd)) * 25.4,
-        "head_af_mm": (p.af + rng.normal(0, sd)) * 25.4,
+        "Length (mm)": (p.L + rng.normal(0, sd)) * 25.4,
+        "Head AF (mm)": (p.af + rng.normal(0, sd)) * 25.4,
         "head_h_mm": (p.h + rng.normal(0, sd)) * 25.4,
         "shank_mm": (p.d + rng.normal(0, sd)) * 25.4,
         "tpi": p.tpi + rng.normal(0, 0.12 * nm),
@@ -324,25 +324,25 @@ def featurize(spectrum, vibration, vision: dict) -> np.ndarray:
     """
     spectrum  : (131,) calibrated reflectance, 400-1700 nm in 10 nm steps (white-referenced)
     vibration : (8192,) tap response sampled at FS = 250 kHz
-    vision    : dict with length_mm, head_af_mm, head_h_mm, shank_mm, tpi, thread_mm,
+    vision    : dict with Length (mm), Head AF (mm), head_h_mm, shank_mm, tpi, thread_mm,
                 straight_mm, marks_n (number of radial lines read on the head)
     """
     v = vision
-    vis = [v["length_mm"], v["head_af_mm"], v["head_h_mm"], v["shank_mm"], v["tpi"], v["thread_mm"],
+    vis = [v["Length (mm)"], v["Head AF (mm)"], v["head_h_mm"], v["shank_mm"], v["tpi"], v["thread_mm"],
            v["straight_mm"], v["marks_n"], float(v["marks_n"] == TARGET["head_marks"]),
-           v["head_af_mm"] / v["shank_mm"], v["length_mm"] / v["shank_mm"], v["thread_mm"] / v["length_mm"]]
+           v["Head AF (mm)"] / v["shank_mm"], v["Length (mm)"] / v["shank_mm"], v["thread_mm"] / v["Length (mm)"]]
     vib, f = vib_features(vibration)
     f1, f2, f3 = f
     # fusion: effective wave speed implied by f1 and the *measured* geometry. It should
     # equal the steel value regardless of length/diameter, so it ties vibration to vision.
-    c_est = f1 * 4 * (v["length_mm"] / 1000) ** 2 / (3.5608 * v["shank_mm"] / 1000) if f1 > 0 else 0.0
+    c_est = f1 * 4 * (v["Length (mm)"] / 1000) ** 2 / (3.5608 * v["shank_mm"] / 1000) if f1 > 0 else 0.0
     fusion = [math.log10(max(c_est, 1.0)), f2 / f1 if f1 > 0 else 0.0, f3 / f1 if f1 > 0 else 0.0]
     return np.array(vis + vib + spec_features(spectrum) + fusion, dtype=float)
 
 
 assert len(FEATURE_NAMES) == len(featurize(
     np.full(WL.size, 0.6), np.random.default_rng(0).normal(size=N_SAMP),
-    dict(length_mm=76, head_af_mm=19, head_h_mm=8, shank_mm=12.6, tpi=13, thread_mm=33,
+    dict(Length (mm)=76, Head AF (mm)=19, head_h_mm=8, shank_mm=12.6, tpi=13, thread_mm=33,
          straight_mm=0.1, marks_n=3)))
 
 

@@ -1,6 +1,6 @@
 {
   "batch_id": "BATCH-20261021-01",
-  "timestamp": "2026-10-21T16:12:21",
+  "timestamp": "2026-10-21T19:45:49",
   "item_count": 8,
   "pass_count": 7,
   "rejected_count": 1,
@@ -10,9 +10,9 @@
   "dimensions": {
     "width_mm": 10.0262,
     "height_mm": 4.9656,
-    "thread_diameter_mm": 5.9585
+    "thread_Diameter (mm)": 5.9585
   },
-  "density_g_cm3": 7.815,
+  "Density (g/cm3)": 7.815,
   "vibration_peak_hz": 1637.8,
   "status": "NON-CONFORM",
   "sample_data": true

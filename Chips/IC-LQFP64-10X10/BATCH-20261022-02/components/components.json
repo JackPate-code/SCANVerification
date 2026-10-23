@@ -2,16 +2,16 @@
   {
     "component_id": "BATCH-20261022-02-COMP-001",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 9.9615,
+      "Length (mm)": 9.9615,
       "width_mm": 9.9439,
       "height_mm": 1.4014,
-      "density_g_cm3": 2.305
+      "Density (g/cm3)": 2.305
     },
     "flags": [],
     "verdict": "CONFORM"
@@ -19,16 +19,16 @@
   {
     "component_id": "BATCH-20261022-02-COMP-002",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 9.9561,
+      "Length (mm)": 9.9561,
       "width_mm": 9.9574,
       "height_mm": 1.4078,
-      "density_g_cm3": 2.314
+      "Density (g/cm3)": 2.314
     },
     "flags": [],
     "verdict": "CONFORM"
@@ -36,16 +36,16 @@
   {
     "component_id": "BATCH-20261022-02-COMP-003",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 10.06,
+      "Length (mm)": 10.06,
       "width_mm": 9.9254,
       "height_mm": 1.4075,
-      "density_g_cm3": 2.3076
+      "Density (g/cm3)": 2.3076
     },
     "flags": [],
     "verdict": "CONFORM"
@@ -53,37 +53,37 @@
   {
     "component_id": "BATCH-20261022-02-COMP-004",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 9.7256,
+      "Length (mm)": 9.7256,
       "width_mm": 9.9787,
       "height_mm": 1.4343,
-      "density_g_cm3": 2.2264
+      "Density (g/cm3)": 2.2264
     },
     "flags": [
-      "length_mm",
+      "Length (mm)",
       "height_mm",
-      "density_g_cm3"
+      "Density (g/cm3)"
     ],
     "verdict": "NON-CONFORM"
   },
   {
     "component_id": "BATCH-20261022-02-COMP-005",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 10.002,
+      "Length (mm)": 10.002,
       "width_mm": 9.9414,
       "height_mm": 1.4001,
-      "density_g_cm3": 2.3355
+      "Density (g/cm3)": 2.3355
     },
     "flags": [],
     "verdict": "CONFORM"
@@ -91,37 +91,37 @@
   {
     "component_id": "BATCH-20261022-02-COMP-006",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 10.042,
+      "Length (mm)": 10.042,
       "width_mm": 9.7522,
       "height_mm": 1.3428,
-      "density_g_cm3": 2.2398
+      "Density (g/cm3)": 2.2398
     },
     "flags": [
       "width_mm",
       "height_mm",
-      "density_g_cm3"
+      "Density (g/cm3)"
     ],
     "verdict": "NON-CONFORM"
   },
   {
     "component_id": "BATCH-20261022-02-COMP-007",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 9.9439,
+      "Length (mm)": 9.9439,
       "width_mm": 10.019,
       "height_mm": 1.4018,
-      "density_g_cm3": 2.3274
+      "Density (g/cm3)": 2.3274
     },
     "flags": [],
     "verdict": "CONFORM"
@@ -129,16 +129,16 @@
   {
     "component_id": "BATCH-20261022-02-COMP-008",
     "expected": {
-      "length_mm": 10.0,
+      "Length (mm)": 10.0,
       "width_mm": 10.0,
       "height_mm": 1.4,
-      "density_g_cm3": 2.32
+      "Density (g/cm3)": 2.32
     },
     "actual": {
-      "length_mm": 10.015,
+      "Length (mm)": 10.015,
       "width_mm": 9.9692,
       "height_mm": 1.4001,
-      "density_g_cm3": 2.3176
+      "Density (g/cm3)": 2.3176
     },
     "flags": [],
     "verdict": "CONFORM"

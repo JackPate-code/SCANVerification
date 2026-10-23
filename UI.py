@@ -24,8 +24,8 @@ batch.json schema (all fields optional except batch_id):
       "timestamp": "2026-10-22T14:03:11",
       "item_count": 250, "pass_count": 246,
       "material": "Steel 304", "material_confidence": 0.97,    # hyperspectral
-      "dimensions": {"length_mm": 40.02, "diameter_mm": 7.98},  # machine vision
-      "density_g_cm3": 7.91,                                    # vibration + vision
+      "dimensions": {"Length (mm)": 40.02, "Diameter (mm)": 7.98},  # machine vision
+      "Density (g/cm3)": 7.91,                                    # vibration + vision
       "vibration_peak_hz": 1523.4,                              # vibration
       "status": "CONFORM" | "NON-CONFORM"
     }
@@ -106,7 +106,7 @@ def load_batches(root: Path, ctype: str, part: str) -> list[dict]:
             "items": n, "rejected": rejected,
             "rate": round(100 * ok / n, 1) if n and ok is not None else None,
             "material": meta.get("material", ""), "conf": meta.get("material_confidence"),
-            "density": meta.get("density_g_cm3"), "vib": meta.get("vibration_peak_hz"),
+            "density": meta.get("Density (g/cm3)"), "vib": meta.get("vibration_peak_hz"),
             "dims": meta.get("dimensions") or {},
             "pdf": bdir / "report.pdf" if (bdir / "report.pdf").exists() else None,
             "dir": bdir, "meta": meta,
@@ -116,8 +116,8 @@ def load_batches(root: Path, ctype: str, part: str) -> list[dict]:
 
 
 class BatchModel(QAbstractTableModel):
-    BASE = ["Batch ID", "Time", "Total items", "Items rejected", "Conform rate %", "Material", "Mat. conf.",
-            "Density g/cm³", "Peak vib. Hz"]
+    BASE = ["Batch ID", "Time", "Total Items", "Items Rejected", "Conform Rate %", "Material", "Material Confidence",
+            "Density g/cm³", "Peak Vib. Hz"]
     TEXT_COLS = {0, 5}
 
     def __init__(self):
@@ -200,33 +200,33 @@ class BatchFilter(QSortFilterProxyModel):
 # ==========================================================================
 PART_CATALOG = {
     "Bolts": {
-        "BLT-M6-20": dict(material="Zinc-plated steel", density=7.85, dims={"length_mm": 20.0, "diameter_mm": 6.0, "head_af_mm": 10.0}),
-        "BLT-M8-40": dict(material="Stainless steel 304", density=7.93, dims={"length_mm": 40.0, "diameter_mm": 8.0, "head_af_mm": 13.0}),
-        "BLT-M10-60": dict(material="Stainless steel 316", density=8.00, dims={"length_mm": 60.0, "diameter_mm": 10.0, "head_af_mm": 16.0}),
-        "BLT-1-2-UNC": dict(material="SAE Grade 5 steel", density=7.85, dims={"length_mm": 76.2, "diameter_mm": 12.7, "head_af_mm": 19.05}),
+        "BLT-M6-20": dict(material="Zinc-plated steel", density=7.85, dims={"Length (mm)": 20.0, "Diameter (mm)": 6.0, "Head AF (mm)": 10.0}),
+        "BLT-M8-40": dict(material="Stainless steel 304", density=7.93, dims={"Length (mm)": 40.0, "Diameter (mm)": 8.0, "Head AF (mm)": 13.0}),
+        "BLT-M10-60": dict(material="Stainless steel 316", density=8.00, dims={"Length (mm)": 60.0, "Diameter (mm)": 10.0, "Head AF (mm)": 16.0}),
+        "BLT-1-2-90": dict(material="SAE Grade 5 steel", density=7.85, dims={"Length (mm)": 76.2, "Diameter (mm)": 12.7, "Head AF (mm)": 19.05}),
     },
     "Nuts": {
-        "NUT-M6-HEX": dict(material="Zinc-plated steel", density=7.85, dims={"width_mm": 10.0, "height_mm": 5.0, "thread_diameter_mm": 6.0}),
-        "NUT-M8-HEX": dict(material="Brass", density=8.50, dims={"width_mm": 13.0, "height_mm": 6.5, "thread_diameter_mm": 8.0}),
-        "NUT-M10-NYLON": dict(material="Steel / nylon insert", density=7.80, dims={"width_mm": 17.0, "height_mm": 10.0, "thread_diameter_mm": 10.0}),
+        "NUT-M6-HEX": dict(material="Zinc-plated steel", density=7.85, dims={"width_mm": 10.0, "height_mm": 5.0, "thread_Diameter (mm)": 6.0}),
+        "NUT-M8-HEX": dict(material="Brass", density=8.50, dims={"width_mm": 13.0, "height_mm": 6.5, "thread_Diameter (mm)": 8.0}),
+        "NUT-M10-NYLON": dict(material="Steel / nylon insert", density=7.80, dims={"width_mm": 17.0, "height_mm": 10.0, "thread_Diameter (mm)": 10.0}),
     },
     "Chips": {
-        "IC-QFN32-5X5": dict(material="Silicon / epoxy", density=2.30, dims={"length_mm": 5.0, "width_mm": 5.0, "height_mm": 0.9}),
-        "IC-SOIC8-4P9X3P9": dict(material="Silicon / epoxy", density=2.33, dims={"length_mm": 4.9, "width_mm": 3.9, "height_mm": 1.5}),
-        "IC-LQFP64-10X10": dict(material="Silicon / epoxy", density=2.32, dims={"length_mm": 10.0, "width_mm": 10.0, "height_mm": 1.4}),
+        "IC-QFN32-5X5": dict(material="Silicon / epoxy", density=2.30, dims={"Length (mm)": 5.0, "width_mm": 5.0, "height_mm": 0.9}),
+        "IC-SOIC8-4P9X3P9": dict(material="Silicon / epoxy", density=2.33, dims={"Length (mm)": 4.9, "width_mm": 3.9, "height_mm": 1.5}),
+        "IC-LQFP64-10X10": dict(material="Silicon / epoxy", density=2.32, dims={"Length (mm)": 10.0, "width_mm": 10.0, "height_mm": 1.4}),
     },
 }
 
 
 def write_report_pdf(path: Path, ctype: str, part: str, meta: dict) -> None:
-    rows = [("Component type", ctype), ("Part number", part), ("Batch", meta["batch_id"]),
-            ("Timestamp", meta["timestamp"]), ("Items scanned", meta["item_count"]),
-            ("Items conforming", meta["pass_count"]), ("Items rejected", meta.get("rejected_count", 0)),
-            ("Material", meta["material"]), ("Density (g/cm³)", meta["density_g_cm3"]),
-            ("Peak vibration (Hz)", meta.get("vibration_peak_hz", "—")),
+    rows = [("Component Type", ctype), ("Part number", part), ("Batch", meta["batch_id"]),
+            ("Timestamp", meta["timestamp"]), ("Items Scanned", meta["item_count"]),
+            ("Items Conforming", meta["pass_count"]), ("Items Rejected", meta.get("rejected_count", 0)),
+            ("Material", meta["material"]), ("Density (g/cm³)", meta["Density (g/cm3)"]),
+            ("Peak Vibration (Hz)", meta.get("vibration_peak_hz", "—")),
             *meta["dimensions"].items(), ("Batch result", "Conform" if str(meta.get("status", "")).upper() in {"PASS", "CONFORM"} else "Non-conform")]
     body = "".join(f"<tr><td><b>{html.escape(str(k))}</b></td><td>{html.escape(str(v))}</td></tr>" for k, v in rows)
-    html_doc = (f"<h1>Batch summary: {html.escape(meta['batch_id'])}</h1>"
+    html_doc = (f"<h1>Batch Summary: {html.escape(meta['batch_id'])}</h1>"
                 f"<table border='1' cellpadding='6' cellspacing='0' width='100%'>{body}</table>")
     writer = QPdfWriter(str(path)); writer.setPageSize(QPageSize(QPageSize.PageSizeId.Letter))
     writer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout.Unit.Millimeter)
@@ -260,8 +260,8 @@ def write_component_pdf(path: Path, ctype: str, part: str, batch_id: str, record
 
 def make_component_record(component_id: str, spec: dict, rng: random.Random, anomaly: bool = False) -> dict:
     expected = dict(spec.get("dimensions", {}) or {})
-    if spec.get("density_g_cm3") is not None:
-        expected["density_g_cm3"] = spec["density_g_cm3"]
+    if spec.get("Density (g/cm3)") is not None:
+        expected["Density (g/cm3)"] = spec["Density (g/cm3)"]
     actual, flags = {}, []
     tol_pct = float(spec.get("tolerance_pct", 1.5) or 1.5)
     for metric, nominal in expected.items():
@@ -297,7 +297,7 @@ def seed_inspection_data(root: Path) -> None:
             pdir = root / ctype / part
             pdir.mkdir(parents=True, exist_ok=True)
             spec = {"description": f"{ctype[:-1].lower().capitalize()} component, part number {part}", "material": base["material"],
-                    "density_g_cm3": base["density"], "dimensions": base["dims"], "tolerance_pct": 1.5}
+                    "Density (g/cm3)": base["density"], "dimensions": base["dims"], "tolerance_pct": 1.5}
             (pdir / "part.json").write_text(json.dumps(spec, indent=2))
             for batch_idx in range(2):
                 ts = now - timedelta(days=1 - batch_idx, hours=rng.randint(0, 5))
@@ -314,7 +314,7 @@ def seed_inspection_data(root: Path) -> None:
                 meta = {"batch_id": bid, "timestamp": ts.isoformat(timespec="seconds"), "item_count": len(records),
                         "pass_count": len(records) - rejected, "rejected_count": rejected, "suspect_count": rejected,
                         "material": base["material"], "material_confidence": round(rng.uniform(.94, .998), 3),
-                        "dimensions": dims, "density_g_cm3": round(base["density"] * rng.uniform(.99, 1.01), 3),
+                        "dimensions": dims, "Density (g/cm3)": round(base["density"] * rng.uniform(.99, 1.01), 3),
                         "vibration_peak_hz": round(rng.uniform(1400, 1650), 1),
                         "status": "NON-CONFORM" if rejected else "CONFORM",
                         "sample_data": True}
@@ -426,8 +426,8 @@ class MainWindow(QMainWindow):
         rl.addWidget(self.subtitle)
 
         cards = QHBoxLayout()
-        self.m_batches, self.m_items = MetricCard("Batches"), MetricCard("Total items")
-        self.m_rate, self.m_last = MetricCard("Items rejected"), MetricCard("Latest batch")
+        self.m_batches, self.m_items = MetricCard("Batches"), MetricCard("Total Items")
+        self.m_rate, self.m_last = MetricCard("Items Rejected"), MetricCard("Latest Batch")
         for c in (self.m_batches, self.m_items, self.m_rate, self.m_last):
             cards.addWidget(c)
         rl.addLayout(cards)
@@ -458,11 +458,11 @@ class MainWindow(QMainWindow):
         self.table.selectionModel().currentRowChanged.connect(self.on_batch_changed)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._build_report_tab(), "Component document")
-        self.tabs.addTab(self._build_components_tab(), "Inspected items")
-        self.tabs.addTab(self._build_details_tab(), "Batch measurements")
+        self.tabs.addTab(self._build_report_tab(), "Component Document")
+        self.tabs.addTab(self._build_components_tab(), "Inspected Items")
+        self.tabs.addTab(self._build_details_tab(), "Batch Measurements")
         self.tabs.addTab(self._build_trends_tab(), "Trends")
-        self.tabs.addTab(self._build_spec_tab(), "Part spec")
+        self.tabs.addTab(self._build_spec_tab(), "Part Specifications")
 
         vs = QSplitter(Qt.Vertical)
         vs.addWidget(self.table)
@@ -691,7 +691,7 @@ class MainWindow(QMainWindow):
             return records
         expected = dict(spec.get("dimensions", {}) or {})
         # Map model CSV fields to UI spec keys; actual CSV values are in inches for fastener dimensions.
-        aliases = {"length_mm": ("length_in", 25.4), "head_af_mm": ("head_width_in", 25.4),
+        aliases = {"Length (mm)": ("length_in", 25.4), "Head AF (mm)": ("head_width_in", 25.4),
                    "head_h_mm": ("head_height_in", 25.4), "shank_mm": ("shank_in", 25.4),
                    "thread_mm": ("thread_in", 25.4), "tpi": ("tpi", 1.0)}
         tol = float(spec.get("tolerance_pct", 1.5) or 1.5)
@@ -703,7 +703,7 @@ class MainWindow(QMainWindow):
                     if alias and row.get(alias[0]):
                         try: value = float(row[alias[0]]) * alias[1]
                         except ValueError: value = None
-                    elif metric == "diameter_mm" and row.get("shank_in"):
+                    elif metric == "Diameter (mm)" and row.get("shank_in"):
                         value = float(row["shank_in"]) * 25.4
                     else:
                         value = None
@@ -946,7 +946,7 @@ class MainWindow(QMainWindow):
     def populate_spec(self, spec: dict):
         self.sp_desc.setText(spec.get("description", ""))
         self.sp_mat.setText(spec.get("material", ""))
-        self.sp_density.setValue(float(spec.get("density_g_cm3", 0) or 0))
+        self.sp_density.setValue(float(spec.get("Density (g/cm3)", 0) or 0))
         self.sp_tol.setValue(float(spec.get("tolerance_pct", 1.0) or 0))
         dims = spec.get("dimensions", {}) or {}
         self.sp_dims.setRowCount(len(dims))
@@ -968,11 +968,11 @@ class MainWindow(QMainWindow):
                     return
         (self.root / self.ctype / self.part / "part.json").write_text(json.dumps({
             "description": self.sp_desc.text(), "material": self.sp_mat.text(),
-            "density_g_cm3": self.sp_density.value(), "dimensions": dims,
+            "Density (g/cm3)": self.sp_density.value(), "dimensions": dims,
             "tolerance_pct": self.sp_tol.value()}, indent=2))
         self.subtitle.setText(self.sp_desc.text())
         self.populate_metric_box()
-        self.statusBar().showMessage("Spec saved", 4000)
+        self.statusBar().showMessage("Spec Saved", 4000)
 
 
 def main():

@@ -1,9 +1,9 @@
 {
   "description": "Chip component, part number IC-LQFP64-10X10",
   "material": "Silicon / epoxy",
-  "density_g_cm3": 2.32,
+  "Density (g/cm3)": 2.32,
   "dimensions": {
-    "length_mm": 10.0,
+    "Length (mm)": 10.0,
     "width_mm": 10.0,
     "height_mm": 1.4
   },

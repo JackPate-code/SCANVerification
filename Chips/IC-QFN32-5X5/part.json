@@ -1,9 +1,9 @@
 {
   "description": "Chip component, part number IC-QFN32-5X5",
   "material": "Silicon / epoxy",
-  "density_g_cm3": 2.3,
+  "Density (g/cm3)": 2.3,
   "dimensions": {
-    "length_mm": 5.0,
+    "Length (mm)": 5.0,
     "width_mm": 5.0,
     "height_mm": 0.9
   },
